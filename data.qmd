@@ -51,7 +51,6 @@ The bar chart provides a variable-level overview of missingness. It highlights t
 # data_with_na <- data %>%
 #   mutate(across(everything(), ~ ifelse(grepl("\\(98\\)|\\(99\\)", .), NA, .)))
 
-
 # Heatmap of missing data
 gg_miss_var(data_with_na) +
   labs(title = "Bar Chart of Missing Data", y = "Number of Missing Values")
