@@ -44,7 +44,7 @@ ggplot(row_missing, aes(x = seq_along(CumulativeMissing), y = CumulativeMissing)
 
 ```
 
-The bar chart provides a variable-level overview of missingness. It highlights that certain variables, such as `HIGH_BP`, `HIGH_CHOL`, and `PTSD`, have the highest numbers of missing entries, each exceeding 300. In contrast, variables such as ALCOHOL and ALC_NUM exhibit minimal missingness, with fewer than 5 missing entries each. This suggests that missing data is more prevalent in health-related variables, possibly because respondents were less willing or able to provide detailed health information.
+The bar chart provides a variable-level overview of missingness. It highlights that certain variables, such as `HIGH_BP`, `HIGH_CHOL`, and `PTSD`, have the highest numbers of missing entries, each exceeding 300. In contrast, variables such as ALCOHOL and ALC_NUM exhibit minimal missingness, with fewer than 5 missing entries each. This suggests that missing data is more prevalent in health-related variables, possibly because respondents were less willing or able to provide detailed health information. 
 
 ```{r}
 # Replace (98) and (99) with NA in the dataset
