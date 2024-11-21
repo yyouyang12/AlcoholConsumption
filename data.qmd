@@ -57,13 +57,10 @@ gg_miss_var(data_with_na) +
   labs(title = "Bar Chart of Missing Data", y = "Number of Missing Values")
 
 
-
-
 # Count missing values per column
 missing_summary <- data_with_na %>%
   summarise(across(everything(), ~ sum(is.na(.)))) %>%
   pivot_longer(everything(), names_to = "Variable", values_to = "MissingCount")
-
 
 
 
