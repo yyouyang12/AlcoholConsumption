@@ -9,6 +9,7 @@ library(tidyr)
 
 data <- readxl::read_excel("well_being_data_short.xlsx")
 
+
 ```
 
 ## Description
