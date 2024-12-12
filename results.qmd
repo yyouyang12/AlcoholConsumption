@@ -195,6 +195,7 @@ data <- data %>%
     ALC_NUM == "Average of more than 15 drinks per week" ~ 6,
     TRUE ~ NA_integer_
   ))
+
 ```
 
 ```{r}
