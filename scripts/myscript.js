@@ -1,3 +1,4 @@
+
 // add your JavaScript/D3 to this file
 
 // Load the data
@@ -28,6 +29,10 @@ d3.csv("data_d3.csv").then(function(data) {
         .append("div")
         .attr("class", "radio-group")
         .style("margin-bottom", "10px")
+
+        .style("display", "flex")
+        .style("align-items", "center")
+
         .append("label")
         .style("margin-right", "10px")
         .text(d => d)
@@ -48,7 +53,9 @@ d3.csv("data_d3.csv").then(function(data) {
     controls2.append("div")
         .style("margin-top", "10px")
         .append("label")
-        .style("margin-right", "10px")
+
+        .style("margin-right", "20px")
+
         .text("With AUD")
         .append("input")
         .attr("type", "checkbox")

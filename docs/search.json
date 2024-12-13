@@ -44,7 +44,9 @@
     "href": "results.html",
     "title": "3  Results",
     "section": "",
-    "text": "3.1 Import libraries\nCode\nlibrary(dplyr)\nlibrary(ggplot2)\nlibrary(tidyr)\nlibrary(forcats)\nlibrary(gridExtra)\nlibrary(cowplot)\nlibrary(viridis)\nlibrary(vcd)\n\n\nWarning: package 'vcd' was built under R version 4.3.3\n\n\nCode\nlibrary(ggalluvial)\nlibrary(knitr)\n\n\nWarning: package 'knitr' was built under R version 4.3.3\n\n\nCode\nlibrary(gridExtra)\nlibrary(likert)\nlibrary(reshape2)\nlibrary(kableExtra)",
+
+    "text": "3.1 Import libraries\nCode\nlibrary(dplyr)\nlibrary(ggplot2)\nlibrary(tidyr)\nlibrary(forcats)\nlibrary(gridExtra)\nlibrary(cowplot)\nlibrary(viridis)\nlibrary(vcd)\nlibrary(ggalluvial)\nlibrary(knitr)\nlibrary(gridExtra)\nlibrary(likert)\nlibrary(reshape2)\nlibrary(kableExtra)",
+
     "crumbs": [
       "<span class='chapter-number'>3</span>  <span class='chapter-title'>Results</span>"
     ]

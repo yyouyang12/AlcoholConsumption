@@ -2,7 +2,9 @@
 
 ## Import libraries
 
-```{r}
+
+```{r, warning=FALSE, message=FALSE}
+
 #| echo: true
 #| message: false
 library(dplyr)
@@ -104,7 +106,9 @@ ggplot(data_summary, aes(x = Condition, y = Side, fill = Response)) +
 
 We now observe the distributions of each variable. Figure 1 shows a bar chart that compares how many people in each category of health conditions responded “Yes” (they have the condition) or “No” (they do not have the condition). The bars pointing to the right represent those who answered “Yes,” while the bars pointing to the left represent those who answered “No.” We can see that many people report mental health diseases, with almost half of the respondents answering “Yes” to Anxiety. In addition, they are not many people reporting substance use, either drug or alcohol.
 
-### **Mental Health Conditions Often Occur Together**
+
+### **Mental Health Conditions Often Occur Together** 
+
 
 We can also examine the co-occurrence of different health challenges. The following heatmap shows how often different diseases occur together. The darker the color, the more likely two diseases are to appear in the same individuals. A key takeaway from this graph is that mental health conditions — like anxiety, depression, and PTSD — tend to appear together more often. However, for other diseases, such co-occurrence is relatively weak. Additionally, these mental conditions seems appear alongside substance use disorders (e.g., alcohol and drug abuse), forming a distinct group.
 
@@ -682,6 +686,10 @@ plot12b <- ggplot(data_percent, aes(x = factor(ALC_NUM_FREQ), y = percent, fill 
 # 左右拼接图
 plot12 <- grid.arrange(plot12a, plot12b, ncol = 2,heights = c(5, 1), top = "Relationship Between Alcohol Consumption and Alcohol Use Disorder")
 invisible(plot12)
+
+
+
+
 ```
 
 From the left plot of Figure 12, as we observed before in figure 11, the proportion of individuals who drink less than 8 per week is the majority of AUD population. And those do not drink alcohol is the largest in the disorder group.

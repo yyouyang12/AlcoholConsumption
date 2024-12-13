@@ -9,8 +9,10 @@ library(tidyr)
 
 data <- readxl::read_excel("well_being_data_short.xlsx")
 
+
 data_with_na <- data %>%
   mutate(across(everything(), ~ ifelse(grepl("\\(98\\)|\\(99\\)", .), NA, .)))
+
 ```
 
 ## Description
