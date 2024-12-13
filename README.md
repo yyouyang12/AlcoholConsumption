@@ -1,5 +1,8 @@
 # The Relationship Between Health Conditions and Alcohol Consumption
 
+## Statement 
+Please go to [AlcoholConsumption_EDAV](https://github.com/yyouyang12/AlcoholConsumption_EDAV) to see the latest version of this project
+
 ## Overview
 This project explores the intricate patterns and relationship between health conditions and alcohol consumption. With the growing pressures of modern life, many individuals turn to alcohol as a means of coping with physical and emotional stress. While this provide short-term relief, it can exacerbate health problems over time, leading to a vicious cycle.
 
@@ -22,4 +25,6 @@ The goal is to provide actionable insights and strategies for supporting individ
 
 ## Published
 November 20, 2024
+
+
 
