@@ -104,7 +104,7 @@ ggplot(data_summary, aes(x = Condition, y = Side, fill = Response)) +
 
 We now observe the distributions of each variable. Figure 1 shows a bar chart that compares how many people in each category of health conditions responded “Yes” (they have the condition) or “No” (they do not have the condition). The bars pointing to the right represent those who answered “Yes,” while the bars pointing to the left represent those who answered “No.” We can see that many people report mental health diseases, with almost half of the respondents answering “Yes” to Anxiety. In addition, they are not many people reporting substance use, either drug or alcohol.
 
-### **Mental Health Conditions Often Occur Together**
+### **Mental Health Conditions Often Occur Together** 
 
 We can also examine the co-occurrence of different health challenges. The following heatmap shows how often different diseases occur together. The darker the color, the more likely two diseases are to appear in the same individuals. A key takeaway from this graph is that mental health conditions — like anxiety, depression, and PTSD — tend to appear together more often. However, for other diseases, such co-occurrence is relatively weak. Additionally, these mental conditions seems appear alongside substance use disorders (e.g., alcohol and drug abuse), forming a distinct group.
 
