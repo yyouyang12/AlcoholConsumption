@@ -9,8 +9,10 @@ library(tidyr)
 
 data <- readxl::read_excel("well_being_data_short.xlsx")
 
+
 data_with_na <- data %>%
   mutate(across(everything(), ~ ifelse(grepl("\\(98\\)|\\(99\\)", .), NA, .)))
+
 ```
 
 ## Description
@@ -44,7 +46,7 @@ ggplot(row_missing, aes(x = seq_along(CumulativeMissing), y = CumulativeMissing)
 
 ```
 
-The bar chart provides a variable-level overview of missingness. It highlights that certain variables, such as `HIGH_BP`, `HIGH_CHOL`, and `PTSD`, have the highest numbers of missing entries, each exceeding 300. In contrast, variables such as ALCOHOL and ALC_NUM exhibit minimal missingness, with fewer than 5 missing entries each. This suggests that missing data is more prevalent in health-related variables, possibly because respondents were less willing or able to provide detailed health information. 
+The bar chart provides a variable-level overview of missingness. It highlights that certain variables, such as `HIGH_BP`, `HIGH_CHOL`, and `PTSD`, have the highest numbers of missing entries, each exceeding 300. In contrast, variables such as ALCOHOL and ALC_NUM exhibit minimal missingness, with fewer than 5 missing entries each. This suggests that missing data is more prevalent in health-related variables, possibly because respondents were less willing or able to provide detailed health information.
 
 ```{r}
 # Replace (98) and (99) with NA in the dataset
@@ -65,6 +67,44 @@ missing_summary <- data_with_na %>%
 
 ```
 
+## Data preprocessing
 
+```{r}
+# Encode certain entry as NA and remove them
+# Drop all NA values
+data_clean <- data_with_na %>%
+  drop_na()
 
+# Remove prefixes from all columns
+data_cleaned <- data_clean %>%
+  mutate(across(everything(), ~ gsub("\\(\\d+\\) ", "", .)))
 
+# Write clean data to csv
+write.csv(data_cleaned, "data_cleaned.csv", row.names = FALSE)
+```
+
+```{r}
+data_cleaned_aggr <- data_cleaned %>%
+  mutate(ALC_NUM_CATE = case_when(
+    ALC_NUM == "Question was not asked" ~ 1,
+    ALC_NUM == "Did not consume any alcohol in the past 30 days" ~ 1,
+    ALC_NUM == "Average of 1 or fewer drinks per week" ~ 1,
+    ALC_NUM == "Average of 2-4 drinks per week" ~ 2,
+    ALC_NUM == "Average of 5-7 drinks per week" ~ 2,
+    ALC_NUM == "Average of 8-15 drinks per week" ~ 3,
+    ALC_NUM == "Average of more than 15 drinks per week" ~ 3
+  )) %>%
+  mutate(ALC_NUM_CATE = factor(ALC_NUM_CATE, labels = c("Low", "Moderate", "High")))
+
+data_cleaned_aggr$Combined_Condition <- ifelse(
+  data_cleaned_aggr$HIGH_BP == "Yes" | 
+  data_cleaned_aggr$DRUG_DIS == "Yes" | 
+  data_cleaned_aggr$ALC_DIS == "Yes", 
+  "Yes", 
+  "No"
+)
+data_d3 = data_cleaned_aggr %>% 
+  select(HIGH_BP, ALC_DIS, DRUG_DIS, ALC_NUM_CATE)
+
+write.csv(data_d3, "data_d3.csv", row.names = FALSE)
+```

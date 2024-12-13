@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>D3 Two-Way Interaction with Pie Charts</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        .controls {
+            margin-bottom: 20px;
+        }
+        .legend {
+            font-size: 14px;
+        }
+        .legend rect {
+            width: 20px;
+            height: 20px;
+            margin-right: 10px;
+        }
+        .legend text {
+            vertical-align: middle;
+        }
+    </style>
+    
+</head>
+<body>
+    <div class="controls">
+        <h3>Component 1: Drinking Levels → AUD Distribution</h3>
+        <button id="low">Low</button>
+        <button id="moderate">Moderate</button>
+        <button id="high">High</button>
+    </div>
+    <svg id="chart1" width="600" height="400"></svg>
+    <div id="legend1" class="legend"></div>
+
+    <div class="controls">
+        <h3>Component 2: AUD → Drinking Level Distribution</h3>
+        <label><input type="checkbox" id="audToggle" value="AUD"> With AUD</label>
+    </div>
+    <svg id="chart2" width="600" height="400"></svg>
+    <div id="legend2" class="legend"></div>
+
+    <script>
+        d3.csv("data_d3.csv").then(function(data) {
+            const audData = data.map(d => ({
+                HIGH_BP: d.HIGH_BP,
+                ALC_DIS: d.ALC_DIS,
+                DRUG_DIS: d.DRUG_DIS,
+                ALC_NUM_CATE: d.ALC_NUM_CATE
+            }));
+
+            // Pie Chart Setup for Component 1
+            const chart1 = d3.select("#chart1");
+            const width1 = +chart1.attr("width");
+            const height1 = +chart1.attr("height");
+            const radius1 = Math.min(width1, height1) / 2 - 40;
+
+            const g1 = chart1.append("g")
+                .attr("transform", `translate(${width1 / 2},${height1 / 2})`);
+
+            const color1 = d3.scaleOrdinal().domain(["Yes", "No"]).range(["#66c2a5", "#fc8d62"]);
+            const pie1 = d3.pie().value(d => d.value);
+            const arc1 = d3.arc().innerRadius(0).outerRadius(radius1);
+
+            // Add legend for Component 1
+            const legend1 = d3.select("#legend1");
+            legend1.selectAll("div")
+                .data(color1.domain())
+                .enter()
+                .append("div")
+                .style("display", "flex")
+                .style("align-items", "center")
+                .style("margin-bottom", "5px")
+                .html(d => `<div style='background-color:${color1(d)};width:20px;height:20px;margin-right:10px;'></div><span>${d}</span>`);
+
+            function updateChart1(drinkingLevel) {
+                const filtered = audData.filter(d => d.ALC_NUM_CATE === drinkingLevel);
+                const summary = d3.rollup(
+                    filtered,
+                    v => v.length,
+                    d => d.ALC_DIS
+                );
+                const chartData = Array.from(summary, ([key, value]) => ({ ALC_DIS: key, value }));
+
+                const paths = g1.selectAll("path").data(pie1(chartData));
+
+                // Enter new paths
+                paths.enter()
+                    .append("path")
+                    .attr("d", arc1)
+                    .attr("fill", d => color1(d.data.ALC_DIS))
+                    .attr("opacity", 0)
+                    .transition().duration(750).attr("opacity", 1);
+
+                // Update existing paths
+                paths.transition().duration(750).attr("d", arc1).attr("fill", d => color1(d.data.ALC_DIS));
+
+                // Remove old paths
+                paths.exit().transition().duration(750).attr("opacity", 0).remove();
+            }
+
+            d3.select("#low").on("click", () => updateChart1("Low"));
+            d3.select("#moderate").on("click", () => updateChart1("Moderate"));
+            d3.select("#high").on("click", () => updateChart1("High"));
+            updateChart1("Low");
+
+            // Pie Chart Setup for Component 2
+            const chart2 = d3.select("#chart2");
+            const width2 = +chart2.attr("width");
+            const height2 = +chart2.attr("height");
+            const radius2 = Math.min(width2, height2) / 2 - 40;
+
+            const g2 = chart2.append("g")
+                .attr("transform", `translate(${width2 / 2},${height2 / 2})`);
+
+            const color2 = d3.scaleOrdinal().domain(["Low", "Moderate", "High"]).range(["#66c2a5", "#fc8d62", "#8da0cb"]);
+            const pie2 = d3.pie().value(d => d.value);
+            const arc2 = d3.arc().innerRadius(0).outerRadius(radius2);
+
+            // Add legend for Component 2
+            const legend2 = d3.select("#legend2");
+            legend2.selectAll("div")
+                .data(color2.domain())
+                .enter()
+                .append("div")
+                .style("display", "flex")
+                .style("align-items", "center")
+                .style("margin-bottom", "5px")
+                .html(d => `<div style='background-color:${color2(d)};width:20px;height:20px;margin-right:10px;'></div><span>${d}</span>`);
+
+            function updateChart2(audFilter) {
+                const filtered = audData.filter(d => d.ALC_DIS === audFilter);
+                const summary = d3.rollup(
+                    filtered,
+                    v => v.length,
+                    d => d.ALC_NUM_CATE
+                );
+                const chartData = Array.from(summary, ([key, value]) => ({ ALC_NUM_CATE: key, value }));
+
+                const paths = g2.selectAll("path").data(pie2(chartData));
+
+                // Enter new paths
+                paths.enter()
+                    .append("path")
+                    .attr("d", arc2)
+                    .attr("fill", d => color2(d.data.ALC_NUM_CATE))
+                    .attr("opacity", 0)
+                    .transition().duration(750).attr("opacity", 1);
+
+                // Update existing paths
+                paths.transition().duration(750).attr("d", arc2).attr("fill", d => color2(d.data.ALC_NUM_CATE));
+
+                // Remove old paths
+                paths.exit().transition().duration(750).attr("opacity", 0).remove();
+            }
+
+            d3.select("#audToggle").on("change", function() {
+                updateChart2(this.checked ? "Yes" : "No");
+            });
+            updateChart2("No");
+        });
+    </script>
+</body>
+</html>

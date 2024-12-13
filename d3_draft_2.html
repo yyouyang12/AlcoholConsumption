@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Interactive D3 Visualization</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+</head>
+<body>
+    <!-- Minimal Divs for Plots -->
+    <div id="plot1"></div>
+    <div id="plot2"></div>
+
+    <script>
+        d3.csv("data_d3.csv").then(function(data) {
+            const audData = data.map(d => ({
+                HIGH_BP: d.HIGH_BP,
+                ALC_DIS: d.ALC_DIS,
+                DRUG_DIS: d.DRUG_DIS,
+                ALC_NUM_CATE: d.ALC_NUM_CATE
+            }));
+
+            // Plot 1: Drinking Levels → AUD Distribution
+            const svg1 = d3.select("#plot1").append("svg")
+                .attr("width", 600)
+                .attr("height", 400);
+
+            const color1 = d3.scaleOrdinal().domain(["Yes", "No"]).range(["#66c2a5", "#fc8d62"]);
+            const pie1 = d3.pie().value(d => d.value);
+            const arc1 = d3.arc().innerRadius(0).outerRadius(150);
+
+            function updatePlot1(drinkingLevel) {
+                const filtered = audData.filter(d => d.ALC_NUM_CATE === drinkingLevel);
+                const summary = d3.rollup(filtered, v => v.length, d => d.ALC_DIS);
+                const chartData = Array.from(summary, ([key, value]) => ({ ALC_DIS: key, value }));
+
+                const g1 = svg1.append("g")
+                    .attr("transform", `translate(300,200)`);
+
+                const paths = g1.selectAll("path").data(pie1(chartData));
+
+                // Enter new paths
+                paths.enter()
+                    .append("path")
+                    .attr("d", arc1)
+                    .attr("fill", d => color1(d.data.ALC_DIS))
+                    .attr("opacity", 0)
+                    .transition().duration(750).attr("opacity", 1);
+
+                // Update existing paths
+                paths.transition().duration(750).attr("d", arc1).attr("fill", d => color1(d.data.ALC_DIS));
+
+                // Remove old paths
+                paths.exit().transition().duration(750).attr("opacity", 0).remove();
+            }
+            updatePlot1("Low"); // Initial plot for 'Low'
+
+            // Plot 2: AUD → Drinking Level Distribution
+            const svg2 = d3.select("#plot2").append("svg")
+                .attr("width", 600)
+                .attr("height", 400);
+
+            const color2 = d3.scaleOrdinal().domain(["Low", "Moderate", "High"]).range(["#66c2a5", "#fc8d62", "#8da0cb"]);
+            const pie2 = d3.pie().value(d => d.value);
+            const arc2 = d3.arc().innerRadius(0).outerRadius(150);
+
+            function updatePlot2(audFilter) {
+                const filtered = audData.filter(d => d.ALC_DIS === audFilter);
+                const summary = d3.rollup(filtered, v => v.length, d => d.ALC_NUM_CATE);
+                const chartData = Array.from(summary, ([key, value]) => ({ ALC_NUM_CATE: key, value }));
+
+                const g2 = svg2.append("g")
+                    .attr("transform", `translate(300,200)`);
+
+                const paths = g2.selectAll("path").data(pie2(chartData));
+
+                // Enter new paths
+                paths.enter()
+                    .append("path")
+                    .attr("d", arc2)
+                    .attr("fill", d => color2(d.data.ALC_NUM_CATE))
+                    .attr("opacity", 0)
+                    .transition().duration(750).attr("opacity", 1);
+
+                // Update existing paths
+                paths.transition().duration(750).attr("d", arc2).attr("fill", d => color2(d.data.ALC_NUM_CATE));
+
+                // Remove old paths
+                paths.exit().transition().duration(750).attr("opacity", 0).remove();
+            }
+            updatePlot2("No"); // Initial plot for 'No'
+        });
+    </script>
+</body>
+</html>

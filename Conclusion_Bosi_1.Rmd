@@ -1,0 +1,415 @@
+---
+title: "Conclusion_Bosi_1"
+author: "Bosi Hou"
+date: "2024-12-11"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+### Import libraries
+```{r}
+library(readxl)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(likert)
+library(reshape2)
+library(ggalluvial)
+library(vcd)  # For mosaic plots
+```
+
+### Load data
+```{r}
+data <- read_excel("well_being_data_short.xlsx")
+
+```
+
+```{r}
+# Encode certain entry as NA and remove them
+data_with_na <- data %>%
+  mutate(across(everything(), ~ ifelse(grepl("\\(98\\)|\\(99\\)", .), NA, .)))
+
+# Drop all NA values
+data_clean <- data_with_na %>%
+  drop_na()
+
+
+
+# Remove prefixes from all columns
+data_cleaned <- data_clean %>%
+  mutate(across(everything(), ~ gsub("\\(\\d+\\) ", "", .)))
+
+
+# Write clean data to csv
+write.csv(data_cleaned, "data_cleaned.csv", row.names = FALSE)
+```
+
+### Check entries
+```{r}
+# Count the number of unique values for each column
+unique_counts <- data_cleaned %>%
+  summarise(across(everything(), ~ n_distinct(.)))
+
+# Print the results
+print(unique_counts)
+
+```
+
+
+### Diverging Bar Chart: faceted by groups (Finished)
+```{r}
+label_mapping <- c(
+  "HIGH_BP" = "High Blood Pressure",
+  "HIGH_CHOL" = "High Cholesterol",
+  "DIABETES" = "Diabetes",
+  "HEART" = "Heart Disease",
+  "OVERWEIGHT" = "Overweight",
+  "COPD" = "COPD", 
+  "IMMUNE" = "Auto-immune disease",
+  "DEPRESSION" = "Depression",
+  "ANXIETY" = "Anxiety",
+  "PTSD" = "PTSD",
+  "ALC_DIS" = "Alcohol Use Disorder",
+  "DRUG_DIS" = "Drug Use Disorder"
+)
+
+
+# Prepare data with groups and filter unused conditions
+data_grouped <- data_cleaned %>%
+  pivot_longer(cols = everything(), names_to = "Condition", values_to = "Response") %>%
+  mutate(Group = case_when(
+    Condition %in% c("HIGH_BP", "HIGH_CHOL", "DIABETES", "HEART", "OVERWEIGHT", "COPD", "IMMUNE") ~ "Chronic Diseases",
+    Condition %in% c("DEPRESSION", "ANXIETY", "PTSD") ~ "Mental Health Conditions",
+    Condition %in% c("ALC_DIS", "DRUG_DIS") ~ "Substance Use Disorders"
+  )) %>%
+  filter(!is.na(Group))  %>% 
+  mutate(Condition = label_mapping[Condition])
+
+
+# Prepare summary data for diverging bar chart
+data_summary <- data_grouped %>%
+  count(Group, Condition, Response) %>%
+  group_by(Group, Condition) %>%
+  mutate(Percentage = n / sum(n) * 100,
+         Side = ifelse(Response == "Yes", Percentage, -Percentage))
+
+# Plot with facet_grid for more flexible layout
+ggplot(data_summary, aes(x = Condition, y = Side, fill = Response)) +
+  geom_bar(stat = "identity", width = 0.7) +
+  coord_flip() +
+  facet_grid(rows = vars(Group), scales = "free_y", space = "free") +
+  scale_y_continuous(labels = abs) +
+  labs(
+    title = "Health Conditions by Group",
+    x = "Condition",
+    y = "Percentage",
+    fill = "Response"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    strip.text.y = element_text(angle = 0, hjust = 1), # Tilt group names horizontally
+    strip.text = element_text(face = "bold"),
+    legend.position = "bottom"
+  ) +
+  scale_fill_manual(values = c("No" = "#E69F00", "Yes" = "#56B4E9"))
+
+
+
+
+
+
+```
+
+
+### Heap map: Co-Occurrence (Finished)
+```{r}
+
+# Convert Yes/No responses to numeric (Yes = 1, No = 0)
+data_numeric <- data_cleaned %>%
+  mutate(across(everything(), ~ ifelse(. == "Yes", 1, 0)))
+
+# Calculate correlations between health conditions
+cor_matrix <- data_numeric %>%
+  select(names(label_mapping)) %>%
+  cor()
+
+# Apply the mapping for better labels
+colnames(cor_matrix) <- rownames(cor_matrix) <- label_mapping[colnames(cor_matrix)]
+
+# Convert correlation matrix to long format for ggplot
+cor_melted <- melt(cor_matrix)
+
+# Plot the heatmap
+ggplot(cor_melted, aes(x = Var1, y = Var2, fill = value)) +
+  geom_tile(color = "white") +
+  scale_fill_gradient2(low = "blue", mid = "white", high = "red", midpoint = 0,
+                       name = "Correlation") +
+  labs(
+    title = "Co-Occurrence of Health Conditions",
+    x = "Condition",
+    y = "Condition"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    axis.title = element_text(face = "bold"),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank()
+  )
+
+
+```
+
+### Relationship with alcohol consumption
+
+```{r}
+
+# Define chronic diseases
+chronic_diseases <- c("HIGH_BP", "HIGH_CHOL", "DIABETES", "HEART", "OVERWEIGHT", "COPD", "IMMUNE")
+
+data_cleaned_aggr <- data_cleaned %>%
+  mutate(ALC_NUM_CATE = case_when(
+    ALC_NUM == "Question was not asked" ~ 1,
+    ALC_NUM == "Did not consume any alcohol in the past 30 days" ~ 1,
+    ALC_NUM == "Average of 1 or fewer drinks per week" ~ 1,
+    ALC_NUM == "Average of 2-4 drinks per week" ~ 2,
+    ALC_NUM == "Average of 5-7 drinks per week" ~ 2,
+    ALC_NUM == "Average of 8-15 drinks per week" ~ 3,
+    ALC_NUM == "Average of more than 15 drinks per week" ~ 3
+  )) %>%
+  mutate(ALC_NUM_CATE = factor(ALC_NUM_CATE, labels = c("Low", "Moderate", "High")))
+
+
+data_chronic = data_cleaned_aggr %>% 
+  select("HIGH_BP", "HIGH_CHOL", "DIABETES", "HEART", "OVERWEIGHT", "COPD", "IMMUNE", "ALC_NUM_CATE")
+
+data_mental = data_cleaned_aggr %>% 
+  select("PTSD","DEPRESSION","ANXIETY","ALC_NUM_CATE")
+
+data_use = data_cleaned_aggr %>% 
+  select("ALC_DIS", "DRUG_DIS", "ALC_NUM_CATE")
+
+```
+
+
+
+```{r}
+
+```
+
+```{r}
+# Convert data to long format
+data_long1 <- data_chronic %>%
+  pivot_longer(cols = HIGH_BP:IMMUNE, 
+               names_to = "Disease", 
+               values_to = "Status")
+
+# Map column names to more descriptive labels
+label_mapping1 <- c(
+  "HIGH_BP" = "High Blood Pressure",
+  "HIGH_CHOL" = "High Cholesterol",
+  "DIABETES" = "Diabetes",
+  "HEART" = "Heart Disease",
+  "OVERWEIGHT" = "Overweight",
+  "COPD" = "COPD",
+  "IMMUNE" = "Auto-immune disease"
+)
+
+# Apply the label mapping
+data_long1$Disease <- factor(data_long1$Disease, levels = names(label_mapping1), labels = label_mapping1)
+
+
+options(repr.plot.width = 8, repr.plot.height = 16)
+# Create the faceted bar plot with narrower bars
+print(
+  ggplot(data_long1, aes(x = ALC_NUM_CATE, fill = Status)) +
+  geom_bar(position = "fill", width = 0.5) + # Adjust bar width for narrower bars
+  facet_wrap(~ Disease, scales = "free_y", ncol = 3) +
+  labs(title = "Proportion of Chronic Diseases Across Alcohol Consumptions",
+       x = "Alcohol Consumption Category",
+       y = "Proportion",
+       fill = "Status") +
+  scale_y_continuous(breaks = seq(0, 1, 0.5)) +
+  theme_minimal() +
+  theme(panel.spacing = unit(0.2, "lines"))
+)
+
+
+
+
+```
+
+```{r}
+# Convert data to long format
+data_long2 <- data_mental %>%
+  pivot_longer(cols = PTSD:ANXIETY, 
+               names_to = "Disease", 
+               values_to = "Status")
+
+# Map column names to more descriptive labels
+label_mapping2 <- c(
+  "HIGH_BP" = "High Blood Pressure",
+  "HIGH_CHOL" = "High Cholesterol",
+  "DIABETES" = "Diabetes",
+  "HEART" = "Heart Disease",
+  "OVERWEIGHT" = "Overweight",
+  "DEPRESSION" = "Depression",
+  "ANXIETY" = "Anxiety",
+  "PTSD" = "PTSD",
+  "ALC_DIS" = "Alcohol Use Disorder",
+  "DRUG_DIS" = "Drug Use Disorder"
+)
+
+# Apply the label mapping
+data_long2$Disease <- factor(data_long2$Disease, levels = names(label_mapping2), labels = label_mapping2)
+
+
+
+
+ggplot(data_long2, aes(x = ALC_NUM_CATE, fill = Status)) +
+  geom_bar(position = "fill", width = 0.5) + # Adjust bar width for narrower bars
+  facet_wrap(~ Disease, scales = "free_y", ncol = 3) +
+  labs(title = "Proportion of Mental Diseases Across Alcohol Consumptions",
+       x = "Alcohol Consumption Category",
+       y = "Proportion",
+       fill = "Status") +
+  scale_y_continuous(breaks = seq(0, 1, 0.5)) +
+  theme_minimal() +
+  theme(panel.spacing = unit(0.2, "lines"))
+
+
+```
+
+
+```{r}
+# Convert data to long format
+data_long3 <- data_use %>%
+  pivot_longer(cols = ALC_DIS:DRUG_DIS, 
+               names_to = "Disease", 
+               values_to = "Status")
+
+# Map column names to more descriptive labels
+label_mapping <- c(
+  "HIGH_BP" = "High Blood Pressure",
+  "HIGH_CHOL" = "High Cholesterol",
+  "DIABETES" = "Diabetes",
+  "HEART" = "Heart Disease",
+  "OVERWEIGHT" = "Overweight",
+  "DEPRESSION" = "Depression",
+  "ANXIETY" = "Anxiety",
+  "PTSD" = "PTSD",
+  "ALC_DIS" = "Alcohol Use Disorder",
+  "DRUG_DIS" = "Drug Use Disorder"
+)
+
+# Apply the label mapping
+data_long3$Disease <- factor(data_long3$Disease, levels = names(label_mapping), labels = label_mapping)
+
+
+
+
+ggplot(data_long3, aes(x = ALC_NUM_CATE, fill = Status)) +
+  geom_bar(position = "fill", width = 0.5) + # Adjust bar width for narrower bars
+  facet_wrap(~ Disease, scales = "free_y", ncol = 3) +
+  labs(title = "Proportion of Mental Diseases Across Alcohol Consumptions",
+       x = "Alcohol Consumption Category",
+       y = "Proportion",
+       fill = "Status") +
+  scale_y_continuous(breaks = seq(0, 1, 0.5)) +
+  theme_minimal() +
+  theme(panel.spacing = unit(0.2, "lines"))
+
+```
+
+### Feature engineering
+```{r}
+# Assuming the data frame is named 'data'
+# Create a new feature combining the three conditions
+data_cleaned_aggr$Combined_Condition <- ifelse(
+  data_cleaned_aggr$HIGH_BP == "Yes" | 
+  data_cleaned_aggr$DRUG_DIS == "Yes" | 
+  data_cleaned_aggr$ALC_DIS == "Yes", 
+  "Yes", 
+  "No"
+)
+
+# Check the distribution of the new feature
+table(data_cleaned_aggr$Combined_Condition)
+
+# Analyze the relationship with alcohol consumption
+# Assuming 'ALC_NUM_CATE' represents alcohol consumption categories
+
+
+ggplot(data_cleaned_aggr, aes(x = ALC_NUM_CATE, fill = Combined_Condition)) +
+  geom_bar(position = "fill", width = 0.6) +
+  labs(
+    title = "Relationship Between Combined Condition and Alcohol Consumption",
+    x = "Alcohol Consumption Category",
+    y = "Proportion",
+    fill = "Combined Condition"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 30, hjust = 1),
+    panel.grid.minor = element_blank()
+  )
+
+```
+
+### Pie chart
+```{r}
+# Filter data for individuals with Alcohol Use Disorder
+aud_people <- data_cleaned_aggr[data_cleaned_aggr$ALC_DIS == "Yes", ]
+
+# Calculate the distribution of alcohol consumption categories among AUD people
+aud_consumption <- table(aud_people$ALC_NUM_CATE)
+
+# Convert to a data frame for plotting
+aud_consumption_df <- as.data.frame(aud_consumption)
+colnames(aud_consumption_df) <- c("Alcohol_Consumption", "Count")
+
+# Calculate percentages for the pie chart
+aud_consumption_df$Percentage <- (aud_consumption_df$Count / sum(aud_consumption_df$Count)) * 100
+
+
+
+ggplot(aud_consumption_df, aes(x = "", y = Count, fill = Alcohol_Consumption)) +
+  geom_bar(stat = "identity", width = 1) +
+  coord_polar("y") +
+  geom_text(
+    aes(label = paste0(round(Percentage, 1), "%")), 
+    position = position_stack(vjust = 0.5), 
+    size = 3
+  ) +
+  labs(
+    title = "Alcohol Consumption Categories Among AUD Individuals",
+    fill = "Alcohol Consumption"
+  ) +
+  scale_fill_manual(
+    values = c("Low" = "#EC6B80", "Moderate" = "#FFC154", "High" = "#47B39C") # Custom colors
+  ) +
+  theme_minimal() +
+  theme(
+    axis.title.x = element_blank(),
+    axis.title.y = element_blank(),
+    axis.text = element_blank(),
+    panel.grid = element_blank()
+  )
+
+```
+
+
+
+```{r}
+data_d3 = data_cleaned_aggr %>% 
+  select(HIGH_BP, ALC_DIS, DRUG_DIS, ALC_NUM_CATE)
+
+
+```
+
